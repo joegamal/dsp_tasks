@@ -27,6 +27,7 @@ import numpy as np
 #read the file and store it in an array
 
 
+#this function reads the signal and return the whole file in an array
 def read_signal(filename):
     file_as_array = []
     with open(filename, 'r') as file:
@@ -34,14 +35,14 @@ def read_signal(filename):
             file_as_array.append(line)
     return file_as_array
 
-
+#this function takes the file name and return a numpy array x, y ready to work with
 def get_signal_body(filename):
     data = np.loadtxt(filename,  skiprows=3)
     x = data[:, 0]
     y = data[:, 1]
     return x, y
 
-
+#this function checks the domain type
 def check_domain_type(signal):
     if signal[0] == 0:
         return "time"
