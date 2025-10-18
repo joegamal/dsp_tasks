@@ -6,12 +6,12 @@ from task_one.display_discrete import draw_discrete
 from task_one.multiplication import signal_multiplication
 from task_one.read_load_signals import get_signal_body
 
-fileName = "signals/Signal1.txt"
+fileName = "new/Signal1.txt"
 
 
 x, y = get_signal_body(fileName)
-x2, y2 = get_signal_body("signals/Signal2.txt")
-x3, y3 = get_signal_body("signals/signal3.txt")
+x2, y2 = get_signal_body("new/Signal2.txt")
+x3, y3 = get_signal_body("new/signal3.txt")
 
 window = Tk()
 window.title("DSP FrameWork")
