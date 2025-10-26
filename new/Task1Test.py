@@ -7,11 +7,11 @@ from task_one.read_load_signals import get_signal_body
 
 SIGNAL_DATA = {}
 
-x1, y1 = get_signal_body("Signal1.txt")
+x1, y1 = get_signal_body("../signals/Signal1.txt")
 SIGNAL_DATA['1'] = (x1, y1)
-x2, y2 = get_signal_body("Signal2.txt")
+x2, y2 = get_signal_body("../signals/Signal2.txt")
 SIGNAL_DATA['2'] = (x2, y2)
-x3, y3 = get_signal_body("signal3.txt")
+x3, y3 = get_signal_body("../signals/signal3.txt")
 SIGNAL_DATA['3'] = (x3, y3)
 
 
@@ -45,9 +45,9 @@ def ReadSignalFile(file_name):
 
 def AddSignalSamplesAreEqual(userFirstSignal,userSecondSignal,Your_indices,Your_samples):
     if(userFirstSignal=='Signal1.txt' and userSecondSignal=='Signal2.txt'):
-        file_name="signals/Signal1+signal2.txt" # write here path of signal1+signal2
+        file_name= "../signals/Signal1+signal2.txt"  # write here path of signal1+signal2
     elif(userFirstSignal=='Signal1.txt' and userSecondSignal=='Signal3.txt'):
-        file_name="signals/signal1+signal3.txt" # write here path of signal1+signal3
+        file_name= "../signals/signal1+signal3.txt"  # write here path of signal1+signal3
     expected_indices,expected_samples=ReadSignalFile(file_name)          
     if (len(expected_samples)!=len(Your_samples)) and (len(expected_indices)!=len(Your_indices)):
         print("Addition Test case failed, your signal have different length from the expected one")
@@ -70,9 +70,9 @@ def AddSignalSamplesAreEqual(userFirstSignal,userSecondSignal,Your_indices,Your_
 
 def MultiplySignalByConst(User_Const,Your_indices,Your_samples):
     if(int(User_Const)==5):
-        file_name="MultiplySignalByConstant-Signal1 - by 5.txt" # write here path of MultiplySignalByConstant-Signal1 - by 5.txt
+        file_name= "../signals/MultiplySignalByConstant-Signal1 - by 5.txt"  # write here path of MultiplySignalByConstant-Signal1 - by 5.txt
     elif(int(User_Const)==10):
-        file_name="MultiplySignalByConstant-signal2 - by 10.txt" # write here path of MultiplySignalByConstant-Signal2 - by 10.txt
+        file_name= "../signals/MultiplySignalByConstant-signal2 - by 10.txt"  # write here path of MultiplySignalByConstant-Signal2 - by 10.txt
         
     expected_indices,expected_samples=ReadSignalFile(file_name)      
     if (len(expected_samples)!=len(Your_samples)) and (len(expected_indices)!=len(Your_indices)):
