@@ -11,11 +11,11 @@ from task_one.read_load_signals import get_signal_body
 
 SIGNAL_DATA = {}
 try:
-    x1, y1 = get_signal_body("Signal1.txt")
+    x1, y1 = get_signal_body("../signals/Signal1.txt")
     SIGNAL_DATA['1'] = (x1, y1)
-    x2, y2 = get_signal_body("Signal2.txt")
+    x2, y2 = get_signal_body("../signals/Signal2.txt")
     SIGNAL_DATA['2'] = (x2, y2)
-    x3, y3 = get_signal_body("signal3.txt")
+    x3, y3 = get_signal_body("../signals/signal3.txt")
     SIGNAL_DATA['3'] = (x3, y3)
 except FileNotFoundError as e:
     print(f"Error loading signal file: {e}. Ensure 'signals/Signal1.txt', 'signals/Signal2.txt', and 'signals/signal3.txt' exist.")
@@ -86,9 +86,9 @@ def SinCosSignalSamplesAreEqual(user_choice,file_name,indices,samples):
 
 def SubSignalSamplesAreEqual(userFirstSignal,userSecondSignal,Your_indices,Your_samples):
     if(userFirstSignal=='Signal1.txt' and userSecondSignal=='Signal2.txt'):
-        file_name="signal1-signal2.txt" # write here path of signal1-signal2
+        file_name= "../signals/signal1-signal2.txt"  # write here path of signal1-signal2
     elif(userFirstSignal=='Signal1.txt' and userSecondSignal=='Signal3.txt'):
-        file_name="signal1-signal3.txt" # write here path of signal1-signal3
+        file_name= "../signals/signal1-signal3.txt"  # write here path of signal1-signal3
         
     expected_indices,expected_samples=ReadSignalFile(file_name)   
     
@@ -110,9 +110,9 @@ def SubSignalSamplesAreEqual(userFirstSignal,userSecondSignal,Your_indices,Your_
 # In[ ]:
 def NormalizeSignal(MinRange,MaxRange,Your_indices,Your_samples):
     if(MinRange==-1 and MaxRange==1):
-        file_name="normalize of signal 1 (from -1 to 1)-- output.txt" # write here path of normalize signal 1 output.txt
+        file_name= "../signals/normalize of signal 1 (from -1 to 1)-- output.txt"  # write here path of normalize signal 1 output.txt
     elif(MinRange==0 and MaxRange==1):
-        file_name="normlize signal 2 (from 0 to 1 )-- output.txt" # write here path of normalize signal 2 output.txt
+        file_name= "../signals/normlize signal 2 (from 0 to 1 )-- output.txt"  # write here path of normalize signal 2 output.txt
         
     expected_indices,expected_samples=ReadSignalFile(file_name)      
     
@@ -184,7 +184,7 @@ def SignalSamplesAreEqual(TaskName,output_file_name,Your_indices,Your_samples):
 x, y = createSin(3,1.96349540849362, 360,720)
 
 
-SinCosSignalSamplesAreEqual("sin", "SinOutput.txt",x,y)
+SinCosSignalSamplesAreEqual("sin", "../signals/SinOutput.txt", x, y)
 
 x_f, y_f = subtract_signals(x1, y1, x2, y2)
 
