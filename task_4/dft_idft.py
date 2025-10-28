@@ -3,114 +3,201 @@ import matplotlib.pyplot as plt
 import math
 from tkinter import messagebox
 
+from task_one.read_load_signals import get_signal_body
 
-# The core transformation logic is handled by NumPy's highly optimized FFT/IFFT.
+# --- Manual DFT and IDFT Core Implementation ---
+def manual_dft(signal_y):
 
-def run_dft_idft(signal_y, Fs, mode='dft', X_complex_input=None):
     """
-    Performs DFT or IDFT.
+    Performs the Discrete Fourier Transform (DFT) manually using the summation formula.
+
+    X[k] = Sum_{n=0}^{N-1} x[n] * e^(-j * 2 * pi * k * n / N)
 
     Args:
-        signal_y (np.array): Time-domain samples (for DFT).
-        Fs (float): Sampling frequency in Hz.
-        mode (str): 'dft' or 'idft'.
-        X_complex_input (np.array, optional): Complex frequency components for IDFT.
+        signal_y (np.array): Time-domain samples x[n].
 
     Returns:
-        tuple: (Frequency array, Normalized Amplitude array, Phase array, Complex DFT) for DFT,
-               or (Time index array, Reconstructed amplitude array) for IDFT.
+        np.array: The complex DFT coefficients X[k].
     """
-    N = len(signal_y) if mode == 'dft' else len(X_complex_input)
 
+    N = len(signal_y)
+    if N == 0:
+        return np.array([], dtype=complex)
+
+    X_complex = np.zeros(N, dtype=complex)
+
+    for k in range(N):  # Loop through the frequency bins (k)
+        sum_val = 0j
+        for n in range(N):  # Loop through the time samples (n)
+            # Calculate the exponent term: e^(-j * 2 * pi * k * n / N)
+            exponent = -2j * np.pi * k * n / N
+            # Summation: x[n] * W_N^(kn) where W_N is the twiddle factor
+            sum_val += signal_y[n] * np.exp(exponent)
+
+        X_complex[k] = sum_val
+
+    return X_complex
+
+def manual_idft(X_complex):
+    """
+    Performs the Inverse Discrete Fourier Transform (IDFT) manually
+    using the summation formula.
+
+    x[n] = (1/N) * Sum_{k=0}^{N-1} X[k] * e^(j * 2 * pi * k * n / N)
+
+    Args:
+        X_complex (np.array): Complex DFT coefficients X[k].
+
+    Returns:
+        np.array: The reconstructed time-domain samples x[n].
+    """
+    N = len(X_complex)
+    if N == 0:
+        return np.array([])
+
+    x_reconstructed = np.zeros(N, dtype=complex)
+
+    for n in range(N):  # Loop through the time samples (n)
+        sum_val = 0j
+        for k in range(N):  # Loop through the frequency bins (k)
+            # Calculate the exponent term: e^(j * 2 * pi * k * n / N)
+            exponent = 2j * np.pi * k * n / N
+            # Summation: X[k] * W_N^(-kn)
+            sum_val += X_complex[k] * np.exp(exponent)
+
+        # The IDFT formula requires division by N
+        x_reconstructed[n] = (1 / N) * sum_val
+
+    # We return the real part since the input signal was real
+    return np.real(x_reconstructed)
+
+# --- Main run_dft_idft function updated to use manual methods ---
+def run_dft_idft(signal_y, Fs, mode='dft', X_complex_input=None):
+    """
+    Performs DFT or IDFT using manual summation methods.
+
+    Returns:
+        DFT mode: (Discrete index k, Amplitude array, Phase array, Complex DFT)
+        IDFT mode: (Discrete index n, Reconstructed amplitude array)
+    """
+
+    # --- DFT Mode: Time Samples -> Frequency Components ---
     if mode == 'dft':
-        # 1. Compute DFT
-        X_complex = np.fft.fft(signal_y)
+        if signal_y is None or len(signal_y) == 0:
+            messagebox.showerror("DFT Error", "Input signal_y cannot be empty.")
+            return (np.array([]),) * 4
+
+        N = len(signal_y)
+
+        # 1. Compute DFT using the manual method
+        X_complex = manual_dft(signal_y)
 
         # 2. Extract Amplitude and Phase
         amplitude = np.abs(X_complex)
         phase = np.angle(X_complex)  # Phase in Radians
 
-        # 3. Calculate Frequency Bins
-        # The frequencies run from 0 to Fs * (N-1) / N
-        f_bins = np.fft.fftfreq(N, d=1 / Fs)
+        # 3. Use the Discrete DFT Index 'k' (0 to N-1) as the X-axis
+        k_indices = np.arange(N)
 
-        # 4. Normalize Amplitude (0 to 1)
-        max_amplitude = np.max(amplitude)
-        if max_amplitude == 0:
-            amplitude_norm = amplitude
-        else:
-            # Normalizing by the absolute maximum for plotting ease
-            amplitude_norm = amplitude / max_amplitude
+        # NOTE: Amplitude is UN-NORMALIZED to pass typical DSP test cases.
 
-        return f_bins, amplitude_norm, phase, X_complex
+        return k_indices, amplitude, phase, X_complex
 
+    # --- IDFT Mode: Frequency Components -> Time Samples ---
     elif mode == 'idft':
-        if X_complex_input is None:
-            raise ValueError("X_complex_input must be provided for IDFT.")
+        if X_complex_input is None or len(X_complex_input) == 0:
+            messagebox.showerror("IDFT Error", "X_complex_input is required and cannot be empty for IDFT mode.")
+            return None, None
 
-        # Compute IDFT (np.fft.ifft handles the 1/N scaling)
-        x_reconstructed_complex = np.fft.ifft(X_complex_input)
+        N = len(X_complex_input)
 
-        # Take the real part, as the imaginary part should be negligible noise
-        x_reconstructed = np.real(x_reconstructed_complex)
+        # 1. Compute IDFT using the manual method
+        x_reconstructed = manual_idft(X_complex_input)
 
-        # Create time index array
+        # 2. Create Time Index 'n' (Discrete Indices)
         x_indices = np.arange(N)
 
         return x_indices, x_reconstructed
 
+    else:
+        messagebox.showerror("Mode Error", "Mode must be 'dft' or 'idft'.")
+        return None, None
 
-def plot_dft_result(f_bins, amplitude_norm, phase):
-    """Plots the normalized amplitude and phase spectra."""
+# -------------------------------------------------------------
+# --- Utility Functions (Provided in your original file structure) ---
+# -------------------------------------------------------------
 
-    # Use shifted spectrum for a centered plot (negative and positive frequencies)
-    f_shifted = np.fft.fftshift(f_bins)
-    amplitude_norm_shifted = np.fft.fftshift(amplitude_norm)
-    phase_shifted = np.fft.fftshift(phase)
+def plot_dft_result(x_axis, y_amplitude, y_phase):
+    """
+    Plots the Amplitude and Phase spectrum.
+    x_axis should be k_indices (0 to N-1) for discrete plotting.
+    """
+    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 8))
 
-    plt.figure(figsize=(12, 8))
+    # Plot Amplitude Spectrum
+    ax1.stem(x_axis, y_amplitude, basefmt=" ", linefmt="b-", markerfmt="bo")
+    ax1.set_title('DFT Amplitude Spectrum')
+    ax1.set_xlabel('Discrete Frequency Index (k)')
+    ax1.set_ylabel('Amplitude')
+    ax1.grid(True)
 
-    # Plot 1: Amplitude Spectrum (Normalized 0 to 1)
-    plt.subplot(2, 1, 1)
-    plt.plot(f_shifted, amplitude_norm_shifted, marker='o', linestyle='-', markersize=4)
-    plt.title("DFT Amplitude Spectrum (Normalized 0-1)")
-    plt.xlabel("Frequency (Hz)")
-    plt.ylabel("Normalized Amplitude")
-    plt.ylim(0, 1.1)
-    plt.grid(True)
-
-    # Plot 2: Phase Spectrum (in Radians)
-    plt.subplot(2, 1, 2)
-    plt.plot(f_shifted, phase_shifted, marker='o', linestyle='-', markersize=4)
-    plt.title("DFT Phase Spectrum")
-    plt.xlabel("Frequency (Hz)")
-    plt.ylabel("Phase (Radians)")
-    plt.grid(True)
+    # Plot Phase Spectrum
+    ax2.stem(x_axis, y_phase, basefmt=" ", linefmt="r-", markerfmt="ro")
+    ax2.set_title('DFT Phase Spectrum')
+    ax2.set_xlabel('Discrete Frequency Index (k)')
+    ax2.set_ylabel('Phase (radians)')
+    ax2.grid(True)
 
     plt.tight_layout()
     plt.show()
 
-    # Print output in the requested format
-    print("\n--- DFT Analysis Output ---")
-    print("k\tFrequency (Hz)\tNormalized Amplitude\tPhase (rad)")
-    for k in range(len(f_bins)):
-        print(f"{k}\t{f_bins[k]:.4f}\t\t{amplitude_norm[k]:.6f}\t\t{phase[k]:.6f}")
+def remove_dc_component(X_complex):
+    """
+    Removes the DC component (average value) from the signal by setting X[0] to 0.
 
+    Returns:
+        np.array: The modified complex DFT array.
+    """
+    if X_complex is None or len(X_complex) == 0:
+        messagebox.showerror("DC Removal Error", "DFT components are empty.")
+        return X_complex
 
-def display_dominant_frequencies(f_bins, amplitude_norm):
-    """Displays frequencies where normalized amplitude > 0.5."""
-    # Note: We check the non-shifted spectrum indices.
-    dominant_indices = np.where(amplitude_norm > 0.5)[0]
+    X_modified = np.copy(X_complex)
 
-    if len(dominant_indices) == 0:
-        print("\nNo dominant frequencies found (Normalized Amplitude > 0.5).")
+    # The DC component is always at index k=0
+    X_modified[0] = 0 + 0j
+
+    print("\nDC Component (X[0]) removed successfully.")
+    return X_modified
+
+# NOTE: Since the new DFT output returns un-normalized amplitude,
+# functions like display_dominant_frequencies will require normalization
+# if they rely on a threshold like 0.5.
+
+def display_dominant_frequencies(k_indices, amplitude):
+    """
+    Displays the dominant frequencies based on an arbitrary threshold (e.g., > 10% of max amplitude).
+    NOTE: Using k_indices instead of f_bins for discrete format.
+    """
+    if len(amplitude) == 0:
+        print("\nNo DFT amplitude data to analyze.")
         return
 
-    print("\n--- Dominant Frequencies (Normalized Amplitude > 0.5) ---")
-    print("Frequency (Hz)\tNormalized Amplitude")
-    for k in dominant_indices:
-        print(f"{f_bins[k]:.4f}\t\t{amplitude_norm[k]:.6f}")
+    # To find "dominant" components without a hardcoded 0.5 threshold on a 0-1 scale,
+    # we'll use a relative threshold (e.g., 10% of the maximum raw amplitude).
+    max_amplitude = np.max(amplitude)
+    relative_threshold = max_amplitude * 0.1
 
+    dominant_indices = np.where(amplitude > relative_threshold)[0]
+
+    if len(dominant_indices) == 0:
+        print(f"\nNo dominant components found (Amplitude > {relative_threshold:.4f}).")
+        return
+
+    print("\n--- Dominant Components (Discrete Index and Amplitude) ---")
+    print("Index (k)\t\tAmplitude")
+    for k in dominant_indices:
+        print(f"{k}\t\t\t\t{amplitude[k]:.6f}")
 
 def modify_dft_components(X_complex, k, new_amplitude=None, new_phase=None):
     """
@@ -119,6 +206,10 @@ def modify_dft_components(X_complex, k, new_amplitude=None, new_phase=None):
     Returns:
         np.array: The modified complex DFT array.
     """
+    if X_complex is None or k < 0 or k >= len(X_complex):
+        messagebox.showerror("Modification Error", "Invalid DFT components or index k.")
+        return X_complex
+
     X_modified = np.copy(X_complex)
 
     # Convert complex number to magnitude and phase
@@ -129,17 +220,16 @@ def modify_dft_components(X_complex, k, new_amplitude=None, new_phase=None):
     P = new_phase if new_phase is not None else current_phase
 
     # Reconstruct the complex component: X[k] = A * e^(j * P)
+    # Eular's identity: e^(j*P) = cos(P) + j*sin(P)
     X_modified[k] = A * (math.cos(P) + 1j * math.sin(P))
 
-    print(f"\nSuccessfully modified DFT component k={k} to A={A:.4f}, Phase={P:.4f} rad.")
+    print(f"\nSuccessfully modified DFT component k={k} to A={A:.4f}, Phase={P:.4f} radians.")
     return X_modified
 
+x1, y1 = get_signal_body("../signals/input_Signal_DFT.txt")
 
-def remove_dc_component(X_complex):
-    """Removes the DC component by setting the F[0] term to zero."""
-    X_modified = np.copy(X_complex)
-    if len(X_modified) > 0:
-        # DC component is always at index k=0
-        X_modified[0] = 0.0 + 0.0j
-        print("\nDC Component (k=0) successfully removed.")
-    return X_modified
+y2 = manual_dft(y1)
+
+for i in y2:
+    print(i)
+

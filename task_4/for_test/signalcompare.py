@@ -1,4 +1,3 @@
-
 import math
 
 #Use to test the Amplitude of DFT and IDFT
@@ -15,7 +14,7 @@ def SignalComapreAmplitude(SignalInput = [] ,SignalOutput= []):
 
 def RoundPhaseShift(P):
     while P<0:
-        p+=2*math.pi
+        P += 2*math.pi
     return float(P%(2*math.pi))
 
 #Use to test the PhaseShift of DFT

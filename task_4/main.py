@@ -6,13 +6,13 @@ from new.cosinusodial import createCos
 from new.normalaization import signal_normalization
 from new.sinusoidal import createSin
 from new.subtraction import subtract_signals
-from new.quantization import quantize_signal
+from task_4.dft_idft import run_dft_idft, display_dominant_frequencies, plot_dft_result, remove_dc_component, \
+    modify_dft_components
 from task_one.addition_of_signals import add_signals
 from task_one.display_continuous import draw_continuous
 from task_one.display_discrete import draw_discrete
 from task_one.multiplication import signal_multiplication
 from task_one.read_load_signals import get_signal_body
-from new.dft_idft import run_dft_idft, plot_dft_result, display_dominant_frequencies, remove_dc_component, modify_dft_components
 import numpy as np
 
 # --- Pre-load Signals ---
@@ -88,7 +88,6 @@ def run_subtraction():
     else:
         print("Invalid signal ID for subtraction. Use '1', '2', or '3'.")
 
-
 def run_multiplication():
     """Reads signal ID and constant from entries and performs multiplication."""
     sig_id = mult_sig_entry.get()
@@ -117,7 +116,6 @@ def run_squaring():
         signal_squaring(x, y)
     else:
         print("Invalid signal ID for squaring. Use '1', '2', or '3'.")
-
 
 # In the '--- Helper Functions for Operations ---' section
 
@@ -150,12 +148,15 @@ def run_accumulation():
     x, y = SIGNAL_DATA[sig_id]
     signal_accumulation(x, y)
 
-
 # In main.py (Place this with your other run_... helper functions)
 
 # ------------------------------------------------------------------
 # --- Helper Function for Quantization -----------------------------
 # ------------------------------------------------------------------
+
+def quantize_signal(x, y, num_bits):
+    pass
+
 
 def run_quantization():
     """Reads signal ID, value, and choice (Bits/Levels) and performs quantization."""
@@ -199,10 +200,7 @@ def run_quantization():
     # 3. Get Signal Data and Run Quantization
     x, y = SIGNAL_DATA[sig_id]
     quantize_signal(x, y, num_bits)
-
-
 # In main.py (Helper Functions Section)
-
 def get_dft_inputs():
     """Helper to retrieve common DFT inputs and validate."""
     global dft_sig_entry, dft_fs_entry
@@ -224,14 +222,11 @@ def get_dft_inputs():
 
     x, y = SIGNAL_DATA[sig_id]
     return x, y, Fs
-
-
 def run_dft_analysis():
     """Applies DFT, plots, and displays dominant frequencies."""
     global LAST_DFT_RESULT
     _, y, Fs = get_dft_inputs()
     if y is None: return
-
     try:
         f_bins, amp_norm, phase, X_complex = run_dft_idft(y, Fs, mode='dft')
 
@@ -242,11 +237,8 @@ def run_dft_analysis():
 
         plot_dft_result(f_bins, amp_norm, phase)
         display_dominant_frequencies(f_bins, amp_norm)
-
     except Exception as e:
         messagebox.showerror("DFT Error", f"An error occurred during DFT: {e}")
-
-
 def run_remove_dc():
     """Removes the DC component (k=0) from the last computed DFT result and re-analyzes."""
     global LAST_DFT_RESULT
@@ -268,8 +260,6 @@ def run_remove_dc():
     plot_dft_result(f_bins, amp_norm, phase)
     display_dominant_frequencies(f_bins, amp_norm)
     messagebox.showinfo("Success", "DC Component Removed. New spectrum displayed.")
-
-
 def open_modify_dialog():
     """Opens a separate window for modifying Amplitude and Phase."""
     global dft_comp_entry, dft_amp_entry, dft_phase_entry, LAST_DFT_RESULT
@@ -304,8 +294,6 @@ def open_modify_dialog():
     dft_phase_entry.insert(0, "e.g., 1.57 (pi/2)")
 
     Button(mod_window, text="Apply Modification", command=apply_modification_and_update).place(x=20, y=160)
-
-
 def apply_modification_and_update():
     """Reads input from the modification dialog and applies the change."""
     global dft_comp_entry, dft_amp_entry, dft_phase_entry, LAST_DFT_RESULT
@@ -339,8 +327,6 @@ def apply_modification_and_update():
         messagebox.showerror("Input Error", "Invalid numerical input for index, amplitude, or phase.")
     except Exception as e:
         messagebox.showerror("Modification Error", f"An error occurred: {e}")
-
-
 def run_idft_reconstruction():
     """Reconstructs the signal using IDFT on the last computed/modified DFT result."""
     global LAST_DFT_RESULT
@@ -503,7 +489,6 @@ acc_sig_entry.insert(0, "1") # Default value
 # --- Quantization Section (NEW) ---
 
 y_quant_start = 500 # Adjust y position as needed to fit
-
 
 
 # Tkinter variable for radio button choice

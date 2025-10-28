@@ -1,3 +1,6 @@
+from task_4.dft_idft import run_dft_idft
+from task_one.read_load_signals import get_signal_body
+
 def SignalsAreEqual(TaskName,given_output_filePath,Your_indices,Your_samples):
     expected_indices=[]
     expected_samples=[]
@@ -19,11 +22,11 @@ def SignalsAreEqual(TaskName,given_output_filePath,Your_indices,Your_samples):
             else:
                 break
     if (len(expected_samples)!=len(Your_samples)) and (len(expected_indices)!=len(Your_indices)):
-         print(TaskName+" Test case failed, your signal have different length from the expected one")
+        print(TaskName+" Test case failed, your signal have different length from the expected one")
         return
     for i in range(len(Your_indices)):
         if(Your_indices[i]!=expected_indices[i]):
-            print(TaskName+" Test case failed, your signal have different indicies from the expected one") 
+            print(TaskName+" Test case failed, your signal have different indices from the expected one")
             return             
     for i in range(len(expected_samples)):
         if abs(Your_samples[i] - expected_samples[i]) < 0.01:
@@ -32,3 +35,12 @@ def SignalsAreEqual(TaskName,given_output_filePath,Your_indices,Your_samples):
             print(TaskName+" Test case failed, your signal have different values from the expected one") 
             return
     print(TaskName+" Test case passed successfully")
+
+
+x1, y1 = get_signal_body("../../signals/DC_component_input.txt")
+x2, y2 = get_signal_body("../../signals/input_Signal_DFT.txt")
+
+Time_index_array, Reconstructed_amplitude_array = run_dft_idft(y2, 16, mode='idft')
+
+SignalsAreEqual("Task Four", "../../signals/Output_Signal_IDFT.txt", x1,
+                Reconstructed_amplitude_array)

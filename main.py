@@ -7,6 +7,8 @@ from new.normalaization import signal_normalization
 from new.sinusoidal import createSin
 from new.subtraction import subtract_signals
 from task3.quantization import quantize_signal_by_bits
+from task_4.dft_idft import run_dft_idft, modify_dft_components, plot_dft_result, remove_dc_component, \
+    display_dominant_frequencies
 from task_one.addition_of_signals import add_signals
 from task_one.display_continuous import draw_continuous
 from task_one.display_discrete import draw_discrete
@@ -23,6 +25,11 @@ GENERATED_SIGNAL_DATA = {'x': np.array([0]), 'y': np.array([0])}
 quant_sig_entry = None
 quant_bits_entry = None
 quant_choice_var = None # NEW: Tkinter variable to hold the radio button choice
+dft_sig_entry = None
+dft_fs_entry = None
+dft_comp_entry = None
+dft_amp_entry = None
+dft_phase_entry = None
 
 # --- Pre-load Signals ---
 # Load existing signals (adjust paths if necessary)
@@ -77,7 +84,6 @@ def run_subtraction():
     else:
         print("Invalid signal ID for subtraction. Use '1', '2', or '3'.")
 
-
 def run_multiplication():
     """Reads signal ID and constant from entries and performs multiplication."""
     sig_id = mult_sig_entry.get()
@@ -106,7 +112,6 @@ def run_squaring():
         signal_squaring(x, y)
     else:
         print("Invalid signal ID for squaring. Use '1', '2', or '3'.")
-
 
 # In the '--- Helper Functions for Operations ---' section
 
@@ -139,13 +144,9 @@ def run_accumulation():
     x, y = SIGNAL_DATA[sig_id]
     signal_accumulation(x, y)
 
-
-
 # ------------------------------------------------------------------
 # --- Helper Function for Quantization -----------------------------
 # ------------------------------------------------------------------
-
-
 
 def run_quantization():
     """Reads signal ID, value, and choice (Bits/Levels) and performs quantization."""
@@ -189,6 +190,168 @@ def run_quantization():
     # 3. Get Signal Data and Run Quantization
     x, y = SIGNAL_DATA[sig_id]
     quantize_signal_by_bits(x, y, num_bits)
+
+
+def get_dft_inputs():
+    """Helper to retrieve common DFT inputs and validate."""
+    global dft_sig_entry, dft_fs_entry
+    sig_id = dft_sig_entry.get()
+    fs_str = dft_fs_entry.get()
+
+    if sig_id not in SIGNAL_DATA:
+        messagebox.showerror("Error", f"Invalid signal ID: '{sig_id}'. Use 1, 2, 3, Q1, Q2, DFT, or DC.")
+        return None, None, None
+
+    try:
+        Fs = float(fs_str)
+        if Fs <= 0:
+            messagebox.showerror("Error", "Sampling Frequency (Fs) must be positive.")
+            return None, None, None
+    except ValueError:
+        messagebox.showerror("Error", "Invalid Fs. Please enter a number.")
+        return None, None, None
+
+    x, y = SIGNAL_DATA[sig_id]
+    return x, y, Fs
+
+def run_dft_analysis():
+    """Applies DFT, plots, and displays dominant frequencies."""
+    global LAST_DFT_RESULT
+    _, y, Fs = get_dft_inputs()
+    if y is None: return
+    try:
+        f_bins, amp_norm, phase, X_complex = run_dft_idft(y, Fs, mode='dft')
+
+        # Store result for subsequent IDFT/modification
+        LAST_DFT_RESULT['X_complex'] = X_complex
+        LAST_DFT_RESULT['Fs'] = Fs
+        LAST_DFT_RESULT['N'] = len(y)
+
+        plot_dft_result(f_bins, amp_norm, phase)
+        display_dominant_frequencies(f_bins, amp_norm)
+    except Exception as e:
+        messagebox.showerror("DFT Error", f"An error occurred during DFT: {e}")
+
+def run_remove_dc():
+    """Removes the DC component (k=0) from the last computed DFT result and re-analyzes."""
+    global LAST_DFT_RESULT
+    if LAST_DFT_RESULT['X_complex'] is None:
+        messagebox.showwarning("Warning", "Run DFT Analysis first.")
+        return
+
+    X_complex = LAST_DFT_RESULT['X_complex']
+    Fs = LAST_DFT_RESULT['Fs']
+
+    X_modified = remove_dc_component(X_complex)
+
+    # Re-analyze and plot the new spectrum
+    f_bins, amp_norm, phase, _ = run_dft_idft(X_modified, Fs, mode='dft')
+
+    # Update stored result
+    LAST_DFT_RESULT['X_complex'] = X_modified
+
+    plot_dft_result(f_bins, amp_norm, phase)
+    display_dominant_frequencies(f_bins, amp_norm)
+    messagebox.showinfo("Success", "DC Component Removed. New spectrum displayed.")
+
+def open_modify_dialog():
+    """Opens a separate window for modifying Amplitude and Phase."""
+    global dft_comp_entry, dft_amp_entry, dft_phase_entry, LAST_DFT_RESULT
+
+    if LAST_DFT_RESULT['X_complex'] is None:
+        messagebox.showwarning("Warning", "Run DFT Analysis first before modifying components.")
+        return
+
+    mod_window = Toplevel(window)
+    mod_window.title("Modify DFT Components")
+    mod_window.geometry("450x300")
+
+    Label(mod_window, text=f"Modify Amplitude/Phase (Indices 0 to {LAST_DFT_RESULT['N'] - 1})",
+          font=("Arial", 10)).pack(pady=10)
+
+    # Component Index (k)
+    Label(mod_window, text="Component Index (k):").place(x=20, y=50)
+    dft_comp_entry = Entry(mod_window, width=5)
+    dft_comp_entry.place(x=150, y=50)
+    dft_comp_entry.insert(0, "1")
+
+    # New Amplitude
+    Label(mod_window, text="New Amplitude:").place(x=20, y=80)
+    dft_amp_entry = Entry(mod_window, width=15)
+    dft_amp_entry.place(x=150, y=80)
+    dft_amp_entry.insert(0, "e.g., 5.0")
+
+    # New Phase (Radians)
+    Label(mod_window, text="New Phase (Radians):").place(x=20, y=110)
+    dft_phase_entry = Entry(mod_window, width=15)
+    dft_phase_entry.place(x=150, y=110)
+    dft_phase_entry.insert(0, "e.g., 1.57 (pi/2)")
+
+    Button(mod_window, text="Apply Modification", command=apply_modification_and_update).place(x=20, y=160)
+
+def apply_modification_and_update():
+    """Reads input from the modification dialog and applies the change."""
+    global dft_comp_entry, dft_amp_entry, dft_phase_entry, LAST_DFT_RESULT
+
+    try:
+        k = int(dft_comp_entry.get())
+        amp_str = dft_amp_entry.get().strip()
+        phase_str = dft_phase_entry.get().strip()
+
+        # Determine new amplitude and phase (None means use current value)
+        new_amplitude = float(amp_str) if amp_str and amp_str != "e.g., 5.0" else None
+        new_phase = float(phase_str) if phase_str and phase_str != "e.g., 1.57 (pi/2)" else None
+
+        if k < 0 or k >= LAST_DFT_RESULT['N']:
+            messagebox.showerror("Index Error", f"Component index k must be between 0 and {LAST_DFT_RESULT['N'] - 1}.")
+            return
+
+        X_modified = modify_dft_components(LAST_DFT_RESULT['X_complex'], k, new_amplitude, new_phase)
+
+        # Re-analyze and plot the new spectrum
+        Fs = LAST_DFT_RESULT['Fs']
+        f_bins, amp_norm, phase, _ = run_dft_idft(X_modified, Fs, mode='dft')
+
+        # Update stored result
+        LAST_DFT_RESULT['X_complex'] = X_modified
+
+        plot_dft_result(f_bins, amp_norm, phase)
+        messagebox.showinfo("Success", f"Component k={k} Modified. New spectrum displayed.")
+
+    except ValueError:
+        messagebox.showerror("Input Error", "Invalid numerical input for index, amplitude, or phase.")
+    except Exception as e:
+        messagebox.showerror("Modification Error", f"An error occurred: {e}")
+
+def run_idft_reconstruction():
+    """Reconstructs the signal using IDFT on the last computed/modified DFT result."""
+    global LAST_DFT_RESULT
+    if LAST_DFT_RESULT['X_complex'] is None:
+        messagebox.showwarning("Warning", "Run DFT Analysis and/or Modifications first.")
+        return
+
+    try:
+        x_indices, y_reconstructed = run_dft_idft(
+            signal_y=None,
+            Fs=LAST_DFT_RESULT['Fs'],
+            mode='idft',
+            X_complex_input=LAST_DFT_RESULT['X_complex']
+        )
+
+        # Assuming draw_discrete is imported and works
+        # If draw_discrete is not in scope, you'll need to update imports
+        from task_one.display_discrete import draw_discrete
+        draw_discrete(x_indices, y_reconstructed)
+        messagebox.showinfo("Success", "Signal reconstructed using IDFT.")
+
+        # Print output for IDFT test case comparison
+        print("\n--- IDFT Reconstructed Signal ---")
+        print("n\tAmplitude")
+        for i in range(len(x_indices)):
+            print(f"{int(x_indices[i])}\t{y_reconstructed[i]:.6f}")
+
+    except Exception as e:
+        messagebox.showerror("IDFT Error", f"An error occurred during IDFT: {e}")
 
 # --- GUI Setup ---
 
@@ -323,7 +486,6 @@ acc_sig_entry.insert(0, "1") # Default value
 y_quant_start = 500 # Adjust y position as needed to fit
 
 
-
 # Tkinter variable for radio button choice
 quant_choice_var = StringVar(window, "bits") # Default to bits
 
@@ -349,6 +511,59 @@ Label(window, text="Value (N or L):").place(x=570, y=y_quant_start)
 quant_val_entry = Entry(window, width=5)
 quant_val_entry.place(x=670, y=y_quant_start)
 quant_val_entry.insert(0, "4") # Default value
+
+# --- Menu Bar Setup ---
+menu_bar = Menu(window)
+window.config(menu=menu_bar)
+
+# --- Frequency Domain Menu ---
+freq_menu = Menu(menu_bar, tearoff=0)
+menu_bar.add_cascade(label="Frequency Domain", menu=freq_menu)
+
+# Function to open the dialog (placed in main.py)
+def open_frequency_domain_dialog():
+    global dft_sig_entry, dft_fs_entry
+
+    freq_window = Toplevel(window)
+    freq_window.title("Frequency Domain Analysis (DFT / IDFT)")
+    freq_window.geometry("500x350")
+
+    Label(freq_window, text="Discrete Fourier Transform (DFT / IDFT)", font=("Arial", 12)).pack(pady=10)
+
+    # Input Section
+    y_start = 50
+    Label(freq_window, text="Signal ID (1, 2, 3, DFT, DC):").place(x=20, y=y_start)
+    dft_sig_entry = Entry(freq_window, width=10)
+    dft_sig_entry.place(x=200, y=y_start)
+    dft_sig_entry.insert(0, "DFT")
+
+    y_start += 30
+    Label(freq_window, text="Sampling Frequency (Fs in Hz):").place(x=20, y=y_start)
+    dft_fs_entry = Entry(freq_window, width=10)
+    dft_fs_entry.place(x=200, y=y_start)
+    dft_fs_entry.insert(0, "100")
+
+    # --- Feature Buttons ---
+
+    y_start += 50
+    # 1. DFT Analysis
+    ttk.Button(freq_window, text="1. Run DFT & Plot Spectrum", command=run_dft_analysis).place(x=20, y=y_start)
+
+    y_start += 40
+    # 2. Remove DC Component
+    ttk.Button(freq_window, text="2. Remove DC Component (F[0]=0)", command=run_remove_dc).place(x=20, y=y_start)
+
+    y_start += 40
+    # 3. Modify Amplitude/Phase
+    ttk.Button(freq_window, text="3. Modify Components (A & Phase)", command=open_modify_dialog).place(x=20, y=y_start)
+
+    y_start += 40
+    # 4. IDFT Reconstruction
+    ttk.Button(freq_window, text="4. Reconstruct Signal (IDFT)", command=run_idft_reconstruction).place(x=20, y=y_start)
+
+# The main menu command:
+freq_menu.add_command(label="Open DFT/IDFT Toolbox", command=open_frequency_domain_dialog)
+
 # ... (window.mainloop()) ...
 def create_generate_signal_page():
     print("hello")
@@ -431,8 +646,6 @@ def create_generate_signal_page():
 
 button = ttk.Button(window, text="generate Signal", command=create_generate_signal_page)
 button.place(x=500, y=100)
-
-
 
 # Run the window
 window.mainloop()
