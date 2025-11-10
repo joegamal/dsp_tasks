@@ -1,14 +1,16 @@
+import os
 from tkinter import *
 from tkinter import ttk, messagebox
 from new.Squaring import signal_squaring
 from new.accumulation import signal_accumulation
 from new.cosinusodial import createCos
+from tkinter.messagebox import showinfo
 from new.normalaization import signal_normalization
+from tkinter import filedialog as fd
 from new.sinusoidal import createSin
 from new.subtraction import subtract_signals
 from task3.quantization import quantize_signal_by_bits
-from task_4.dft_idft import run_dft_idft, modify_dft_components, plot_dft_result, remove_dc_component, \
-    display_dominant_frequencies
+from task_4.dft_idft import run_dft_idft, plot_dft_result, display_dominant_frequencies, remove_dc_component, modify_dft_components
 from task_one.addition_of_signals import add_signals
 from task_one.display_continuous import draw_continuous
 from task_one.display_discrete import draw_discrete
@@ -34,17 +36,17 @@ dft_phase_entry = None
 # --- Pre-load Signals ---
 # Load existing signals (adjust paths if necessary)
 try:
-    x1, y1 = get_signal_body("signals/Signal1.txt")
+    x1, y1 = get_signal_body("new/signals/Signal1.txt")
     SIGNAL_DATA['1'] = (x1, y1)
-    x2, y2 = get_signal_body("signals/Signal2.txt")
+    x2, y2 = get_signal_body("new/signals/Signal2.txt")
     SIGNAL_DATA['2'] = (x2, y2)
-    x3, y3 = get_signal_body("signals/signal3.txt")
+    x3, y3 = get_signal_body("new/signals/signal3.txt")
     SIGNAL_DATA['3'] = (x3, y3)
 
     # Load NEW quantization signals
-    x_q1, y_q1 = get_signal_body("signals/Quan1_input.txt")  # Assuming file is in the same accessible directory
+    x_q1, y_q1 = get_signal_body("new/signals/Quan1_input.txt")  # Assuming file is in the same accessible directory
     SIGNAL_DATA['Q1'] = (x_q1, y_q1)
-    x_q2, y_q2 = get_signal_body("signals/Quan2_input.txt")
+    x_q2, y_q2 = get_signal_body("new/signals/Quan2_input.txt")
     SIGNAL_DATA['Q2'] = (x_q2, y_q2)
 except FileNotFoundError as e:
     print(f"Error loading signal file: {e}. Ensure 'signals/Signal1.txt', 'signals/Signal2.txt', and 'signals/signal3.txt' exist.")
@@ -57,6 +59,29 @@ except FileNotFoundError as e:
 
 
 # --- Helper Functions for Operations ---
+
+def select_file():
+    # Define file type filter (optional)
+    filetypes = (
+        ('text files', '*.txt')
+    )
+
+    # Open the file selection dialog
+    full_path=os.getcwd()
+    filename = fd.askopenfilename(
+        title='Choose a signal',
+        initialdir= f'{full_path()}/signals',
+        filetypes=filetypes
+    )
+
+    # Check if a file was actually selected
+    if filename:
+        showinfo(
+            title='Selected File',
+            message=f'File Path: {filename}'
+        )
+    return filename
+
 
 def run_addition():
     """Reads signal IDs from entries and performs addition."""
@@ -353,6 +378,16 @@ def run_idft_reconstruction():
     except Exception as e:
         messagebox.showerror("IDFT Error", f"An error occurred during IDFT: {e}")
 
+
+def display_discerte():
+    signal_path = select_file()
+    x1, y1 = get_signal_body(signal_path)
+    draw_discrete(x1, y1)
+
+def display_continuous():
+    signal_path = select_file()
+    x1, y1 = get_signal_body(signal_path)
+    draw_continuous(x1, y1)
 # --- GUI Setup ---
 
 window = Tk()
@@ -365,11 +400,11 @@ label.pack(pady=20)
 # --- Display Buttons (Using Signal 1 as default for simplicity) ---
 
 # Button to show discrete
-button = ttk.Button(window, text="Display Signal 1 Discrete", command=lambda: draw_discrete(SIGNAL_DATA['1'][0], SIGNAL_DATA['1'][1]))
+button = ttk.Button(window, text="Display Signal Discrete", command=lambda: display_discerte())
 button.place(x=20, y=80)
 
 # Button to show continuous
-button = ttk.Button(window, text="Display Signal 1 Continuous", command=lambda: draw_continuous(SIGNAL_DATA['1'][0], SIGNAL_DATA['1'][1]))
+button = ttk.Button(window, text="Display Signal Continuous", command=lambda: display_continuous())
 button.place(x=20, y=130)
 
 # --- Addition Section ---
@@ -520,7 +555,7 @@ window.config(menu=menu_bar)
 freq_menu = Menu(menu_bar, tearoff=0)
 menu_bar.add_cascade(label="Frequency Domain", menu=freq_menu)
 
-# Function to open the dialog (placed in main.py)
+# Function to open the dialog (placed in
 def open_frequency_domain_dialog():
     global dft_sig_entry, dft_fs_entry
 

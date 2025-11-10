@@ -39,8 +39,8 @@ def QuantizationTest1(file_name,Your_EncodedValues,Your_QuantizedValues):
 
 
 
-x1, y1 = get_signal_body("../signals/Quan1_input.txt")
+x1, y1 = get_signal_body("../new/signals/Quan1_input.txt")
 encoded, y2 = quantize_signal_by_bits(x1, y1, 3)
 
 
-QuantizationTest1("../signals/Quan1_Out.txt", encoded, y2)
+QuantizationTest1("../new/signals/Quan1_Out.txt", encoded, y2)

@@ -60,7 +60,7 @@ def QuantizationTest2(file_name,Your_IntervalIndices,Your_EncodedValues,Your_Qua
 
 
 
-x1, y1 = get_signal_body("../signals/Quan2_input.txt")
+x1, y1 = get_signal_body("../new/signals/Quan2_input.txt")
 
 
 level_index , encoded_bits , y_quantized, y_error = quantize_signal_by_levels(x1, y1, 4)
@@ -68,4 +68,4 @@ level_index , encoded_bits , y_quantized, y_error = quantize_signal_by_levels(x1
 for i in y_error:
     print(i)
 
-QuantizationTest2("../signals/Quan2_Out.txt", level_index, encoded_bits, y_quantized, y_error)
+QuantizationTest2("../new/signals/Quan2_Out.txt", level_index, encoded_bits, y_quantized, y_error)
